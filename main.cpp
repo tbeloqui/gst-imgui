@@ -19,6 +19,35 @@ glfw_error_callback (int error, const char *description)
   g_print ("Glfw Error %d: %s\n", error, description);
 }
 
+// GstVideoTestSrcPattern
+static const char *video_test_patterns[] = {
+  "SMPTE color bars",
+  "Random (television snow)",
+  "100% Black",
+  "100% White",
+  "Red",
+  "Green",
+  "Blue",
+  "Checkers 1px",
+  "Checkers 2px",
+  "Checkers 4px",
+  "Checkers 8px",
+  "Circular",
+  "Blink",
+  "SMPTE 75% color bars",
+  "Zone plate",
+  "Gamut checkers",
+  "Chroma zone plate",
+  "Solid color",
+  "Moving ball",
+  "SMPTE 100% color bars",
+  "Bar",
+  "Pinwheel",
+  "Spokes",
+  "Gradient",
+  "Colors"
+};
+
 int
 main (int argc, char **argv)
 {
@@ -68,7 +97,7 @@ main (int argc, char **argv)
       "format", G_TYPE_STRING, "RGBA",
       "width", G_TYPE_INT, 1280,
       "height", G_TYPE_INT, 720,
-      "framerate", GST_TYPE_FRACTION, 30, 1,
+      "framerate", GST_TYPE_FRACTION, 60, 1,
       NULL);
 
   gboolean link_ok = gst_element_link_filtered (videosrc, appsink, caps);
@@ -115,7 +144,24 @@ main (int argc, char **argv)
         ImVec2 (1, 1)
         );
 
-    ImGui::ShowMetricsWindow ();
+    static ImGuiComboFlags combo_flags = 0;
+
+    static const char *item_current = video_test_patterns[0];
+    if (ImGui::BeginCombo ("Video Test Patterns", item_current, combo_flags)) {
+      for (int i = 0; i < IM_ARRAYSIZE (video_test_patterns); i++) {
+        bool is_selected = (item_current == video_test_patterns[i]);
+        if (ImGui::Selectable (video_test_patterns[i], is_selected)) {
+          item_current = video_test_patterns[i];
+          g_object_set (videosrc, "pattern", i, NULL);
+          g_print ("selected %d=%s \n", i, video_test_patterns[i]);
+        }
+
+        if (is_selected)
+          ImGui::SetItemDefaultFocus ();
+      }
+      ImGui::EndCombo ();
+    }
+
     ImGui::Render ();
 
     int display_w, display_h;
