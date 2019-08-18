@@ -13,6 +13,8 @@
 #include <GL/gl3w.h>
 #include <GLFW/glfw3.h>
 
+#include "gstlog.hpp"
+
 static void
 glfw_error_callback (int error, const char *description)
 {
@@ -51,6 +53,8 @@ static const char *video_test_patterns[] = {
 int
 main (int argc, char **argv)
 {
+  GstLog gstlog;
+
   glfwSetErrorCallback (glfw_error_callback);
   if (!glfwInit ())
     return 1;
@@ -112,6 +116,8 @@ main (int argc, char **argv)
   glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
   glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
+  bool show_gst_log = true;
+
   while (!glfwWindowShouldClose (window)) {
 
     glfwPollEvents ();
@@ -153,7 +159,7 @@ main (int argc, char **argv)
         if (ImGui::Selectable (video_test_patterns[i], is_selected)) {
           item_current = video_test_patterns[i];
           g_object_set (videosrc, "pattern", i, NULL);
-          g_print ("selected %d=%s \n", i, video_test_patterns[i]);
+		  GST_INFO ("selected %d=%s", i, video_test_patterns[i]);
         }
 
         if (is_selected)
@@ -161,6 +167,9 @@ main (int argc, char **argv)
       }
       ImGui::EndCombo ();
     }
+
+	if (show_gst_log)
+		gstlog.render (&show_gst_log);
 
     ImGui::Render ();
 
