@@ -52,6 +52,7 @@ sources = [
      'external/imgui/examples/imgui_impl_glfw.cpp',
      'external/imgui/examples/imgui_impl_opengl3.cpp',
      'external/imgui/examples/libs/gl3w/GL/gl3w.c',
+	 'gstlog.cpp',
      'main.cpp'
 ]
 
