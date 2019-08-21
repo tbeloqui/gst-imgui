@@ -4,6 +4,8 @@
 
 #include <fstream>
 
+#include <glib.h>
+
 // GStreamer Log Widget
 // based on https://github.com/ocornut/imgui/issues/300
 
@@ -11,7 +13,7 @@ class GstLog
 {
 public:
 	GstLog ();
-	~GstLog () = default;
+	~GstLog ();
 
 	void render (bool* open);
 
@@ -27,4 +29,8 @@ private:
 	char gst_debug[255];
 
 	std::fstream file;
+
+	GTimer* timer;
+
+	void readLines ();
 };

@@ -3,8 +3,6 @@
 #include <string>
 #include <iostream>
 
-#include <glib.h>
-
 static const ImVec4 WARNING_COLOR = ImVec4 (1.0f, 0.75f, 0.0f, 1.0f);
 static const ImVec4 ERROR_COLOR = ImVec4 (1.0f, 0.0f, 0.25f, 1.0f);
 static const ImVec4 TEXT_FG_COLOR = ImVec4 (0.0f, 0.0f, 0.0f, 1.0f);
@@ -16,12 +14,22 @@ GstLog::GstLog ()
 	, track (true)
 	, filter ()
 	, file ()
+	, timer (g_timer_new ())
 {
+	g_timer_start (timer);
+
 	g_snprintf (log_path, sizeof (log_path), "%s" G_DIR_SEPARATOR_S "gst-%p.log", g_get_tmp_dir (), this);
 	g_setenv ("GST_DEBUG_FILE", log_path, TRUE);
 
+	std::cout << log_path << std::endl;
+
 	const gchar* gst_debug_env = g_getenv ("GST_DEBUG");
 	g_snprintf (gst_debug, sizeof (gst_debug), "GST_DEBUG=%s", gst_debug_env ? gst_debug_env : "");
+}
+
+GstLog::~GstLog ()
+{
+	g_timer_destroy (timer);
 }
 
 static void
@@ -53,18 +61,33 @@ render_log_line (const gchar* line, const gchar* line_end)
 		ImGui::TextUnformatted (line, line_end);
 }
 
-void GstLog::render (bool* open)
+void GstLog::readLines ()
 {
+	gdouble elapsed = g_timer_elapsed (timer, NULL);
+	if (elapsed < 0.5)
+		return;
+
+	g_timer_start (timer);
+
 	if (!file.is_open ())
 		file.open (log_path, std::fstream::in);
-	else {
+
+	if (file.is_open ()) {
 		file.clear ();
 
-		for (std::string line; std::getline (file, line); ) {
+		const int max_lines = 100;
+		int i = 0;
+		std::string line;
+		for (; i < max_lines && std::getline (file, line); i++) {
 			line_offsets.push_back (buf.size ());
 			buf.append (line.c_str (), line.c_str () + line.size ());
 		}
 	}
+}
+
+void GstLog::render (bool* open)
+{
+	readLines ();
 
 	ImGui::SetNextWindowSize (ImVec2 (600, 250), ImGuiCond_FirstUseEver);
 	ImGui::Begin ("GStreamer Log", open);
@@ -78,7 +101,7 @@ void GstLog::render (bool* open)
 	bool copy = ImGui::Button ("Copy");
 	ImGui::SameLine ();
 
-	bool set_track = ImGui::Button ("Follow");
+	bool set_track = ImGui::Button ("Track");
 	ImGui::SameLine ();
 
 	ImGui::Text (gst_debug);
